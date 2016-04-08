@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>RPG</title>
+    
+    <link rel="stylesheet" type="text/css" href="style.css">
+    
+    <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script defer type="text/javascript" src="game.js"></script>
+    <!-- <script defer type="text/javascript" src="creature.js"></script>
+    <script defer type="text/javascript" src="player.js"></script>
+    <script defer type="text/javascript" src="enemy.js"></script>
+    <script defer type="text/javascript" src="loaded.js"></script> -->
+    
+    
+    
+  </head>
+  
+  <body>
+    
+    <header>
+      <p>
+        Press space to start.
+        Use up, down, left, and right or WASD to move, space to jump, e to use a power (if you have one), p to pause.
+      </p>
+    </header>
+    
+    <main id="game-holder">
+      <section id="init-section">
+        <form class="" id="start-form">
+          Choose your class:
+          <input type="radio" name="class" value="Barbarian" checked>Barbarian
+          <input type="radio" name="class" value="Wizard">Wizard
+          <input type="radio" name="class" value="Ranger">Ranger
+          <input type="submit" value="Play!">
+        </form>
+      </section>
+      
+      <section id="game-section">
+        <canvas id="canvas" height="300px" width="300px"></canvas>
+        
+      </section>
+      
+    </main>
+    
+    
+    
+    
+  </body>
+  
+</html>
