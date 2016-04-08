@@ -49,7 +49,7 @@ game.lose                         = lose;
 //properties to manage the game
 game.player                       = new Player(); //only way to get it not to complain about all the functions is to do it this way, seems inelegant though because this is just a dummy initial one to prevent it from compaining
 game.formClass                    = null;
-game.speed                        = 1000;
+game.speed                        = 100;
 game.running                      = false; //need a separate game.paused?
 game.score                        = 0; //TODO: implement
 game.Constructors                 = {
@@ -70,8 +70,12 @@ game.controls                     = {//keycodes matched with
   '68': () => {
     game.player.tellToMove('right');
   }, //right on d or right arrow
-  '38': game.player.jump,
-  '87': game.player.jump, //jump on w, or up arrow
+  '38': () => {
+    game.player.jump(); //not sure why it's not working if I just put in game.player.jump
+  },
+  '87':() => {
+    game.player.jump();
+  }, //jump on w, or up arrow
   '32': game.player.usePower, //use power with spacebar 
   '69': game.player.useItem,
   '191': game.player.useItem, //use item on e or /  
@@ -86,6 +90,7 @@ game.controls                     = {//keycodes matched with
 };
 
 //properties to manage game view
+game.gravity                      = -1;
 game.width                        = 100;
 game.height                       = 20;
 game.halfScreenWidth              = 25; 
@@ -94,7 +99,8 @@ game.unitSize                     = 10;
 game.board                        = null;
 game.sprites                      = [];
 game.level                        = 0;
-game.levels                       = [[]]; //each inner array is an array of objects with props x, y, and value, y goes from top to bottom as index increases, x goes from left to right
+game.levels                       = []; //each inner array is an array of objects with props x, y, and value, y goes from top to bottom as index increases, x goes from left to right
+game.levels[0]                    = [{x:20, y: 18, value: 'ground'}];
 // game.difficulty                   = 'easy';
 
 
@@ -156,7 +162,7 @@ function buildInitBoard(){ //sets up the game.board array
   }); 
   console.log(game.board);  
   game.levels[game.level].forEach((posInfo) => {
-    game.board[posInfo.x][posInfo.y] = [posInfo.value, game.board[posInfo.x][posInfo.y]];
+    game.board[posInfo.x][posInfo.y] = posInfo.value;
   }); 
 }
 
@@ -179,7 +185,8 @@ function attachEventListeners(e){ //attaches the movement controls
 }
 
 function gameLoop(){ //executes the mechanics of the game
-  console.log('gameLoop');
+  // console.log('gameLoop');
+  console.log('_________________________________________________________________________________________________________');
   if(!game.running){
     return;
   }
@@ -192,20 +199,20 @@ function gameLoop(){ //executes the mechanics of the game
 }
 
 function reInitForNewRound(){ //runs every round to reinitialize properties that need to be cleared each round
-  console.log('reInitForNewRound'); 
+  // console.log('reInitForNewRound'); 
   game.player.moving = false;
   game.player.nextAction = null;
 }
 
 
 
-function doActionForEach(){ //
+function doActionForEach(){ //purpose is to do actions for each object in the sprite list, if they have an action cued
   console.log('doActionForEach');
   
 }
 
 function drawBoard(){
-  console.log('drawBoard');
+  // console.log('drawBoard');
   ctx.clearRect(0, 0, game.width * game.unitSize, game.height * game.unitSize);
   let maxX = game.boardXMin + (2 * game.halfScreenWidth);
   game.board.slice(game.boardXMin, maxX > game.width - 1 ? game.width - 1 : maxX) //dont want to iterate beyond the edge of the array
@@ -217,22 +224,22 @@ function drawBoard(){
           return game.drawMethods[value](xPos, yPos); 
         } else if (value instanceof Array){ //an object to draw there 
           //array is of form [objectThatsHere/constructorFunctionNameAsString, backgroundString]
-          console.log('Drew a character at ' + xPos + ', ' + yPos);
           if(value[0] instanceof Object){ 
-            console.log('value[0].moving is ', value[0].moving);
-            console.log('value[0].jumping is ', value[0].jumping);
+            // console.log(value[0].name + ' moving is ', value[0].moving);
+            // console.log(value[0].name + ' jumping is ', value[0].jumping);
             if (value[0].moving || value[0].jumping){
               return value[0].move(value, xPos, yPos);  
             } else {
-              return value[0].drawMe(xPos, yPos);
+              console.log('Drew a ' + value[0].name + ' at ' + xPos + ', ' + yPos);
+              return value[0].drawMe();
             }
           } else if (typeof(value[0] === 'string' )){
-            console.log('Instantiated a character at ' + xPos + ', ' + yPos);
             let instantiatedObject = new game.Constructors[value[0]]();
+            console.log('Instantiated a ' + instantiatedObject.name + ' at ' + xPos + ', ' + yPos);
             instantiatedObject.xPos = xPos;
             instantiatedObject.yPos = yPos;
             game.board[xPos][yPos] = [instantiatedObject, game.board[xPos][yPos][1]];
-            return instantiatedObject.drawMe(xPos, yPos);
+            return instantiatedObject.drawMe();
           } else {
             console.log('Error rendering at postion ' + xPos + ', ' + yPos);
             console.log('Error value was ', value);
@@ -246,6 +253,7 @@ function drawBoard(){
 }
 
 function drawSquare(xPos, yPos, color){ //draws a box at the specified coordinate, starting at the top left corner of the box
+  // console.log('drawSquare ' + xPos + ', ' + yPos + ', for color ' + color);
   ctx.save();
   ctx.fillStyle = color;
   ctx.fillRect((xPos - game.boardXMin) * game.unitSize, yPos * game.unitSize, game.unitSize, game.unitSize);
@@ -258,6 +266,7 @@ function win(){ //runs when player gets to end of course
   console.log('win');
   $(window).off('keydown');
   game.running = false;
+  // game.level++;
   ctx.save();
   ctx.fillStyle = 'red';
   ctx.fillRect(0, 0, game.width * game.unitSize, game.height * game.unitSize);
@@ -332,7 +341,7 @@ function Creature(options = {}){
 }
 
 Creature.prototype.tellToMove = function(direction){
-  console.log('tellToMove ' + direction);
+  // console.log(this.name + ' tellToMove ' + direction);
   this.moving = true;
   this.direction = direction;
 };
@@ -340,7 +349,7 @@ Creature.prototype.tellToMove = function(direction){
 
 
 Creature.prototype.move = function(arrayInGameBoard, xPos, yPos){
-  console.log('move');
+  // console.log('move');
   let creature = arrayInGameBoard[0];
   let backgroundString = arrayInGameBoard[1];
   if(!creature.moving && !creature.jumping){ //get out if it's not supposed to move
@@ -349,16 +358,17 @@ Creature.prototype.move = function(arrayInGameBoard, xPos, yPos){
   let newXPos = xPos + creature.directions[creature.direction];
   let newYPos = yPos;
   let squareToCheck = game.board[newXPos][yPos];
-  if(squareToCheck){ //it's trying to move into a square with something in it
-    return;
+  if(squareToCheck){ //it's trying to move into a square with something in it //need to figure out how to deal with it if its both moving and jumping
+    return creature.tryToMoveMeTo(newXPos, newYPos, xPos, yPos, squareToCheck, backgroundString);
   } else { //it's trying to move into a square with nothing in it
     game.board[xPos][yPos] = backgroundString;
-    console.log('game.board at ' + xPos + ', ' + yPos + ' is ' + game.board[xPos][yPos]);
+    console.log('game.board at old creature position ' + xPos + ', ' + yPos + ' is now ', game.board[xPos][yPos]);
     this.xPos = newXPos;
     this.yPos = newYPos;
     this.moving = false;
     game.board[newXPos][newYPos] = [this, game.board[newXPos][newYPos]];
-    console.log('game.board at ' + newXPos + ', ' + newYPos + ' is ' + game.board[newXPos][newYPos]);
+    console.log('game.board at new position ' + newXPos + ', ' + newYPos + ' is ', game.board[newXPos][newYPos]);
+    creature.drawMe();
   }
 };
 
@@ -369,9 +379,9 @@ Creature.prototype.CheckFuturePath = function(){
   
 };
 
-Creature.prototype.drawMe = function(xPos, yPos){
+Creature.prototype.drawMe = function(){
   console.log('drawMe');
-  game.drawSquare(xPos, yPos, this.color);
+  game.drawSquare(this.xPos, this.yPos, this.color);
 
 };
 
@@ -399,15 +409,29 @@ function Player(){
   this.hasPower     = false;
   this.jumpsAllowed = 2;
   this.jumping      = false;
+  this.jumpStrength = 6;
+  this.vertSpeed    = 0;
   this.moving       = false;
   this.nextAction   = null;
 }
 
 Player.prototype = new Creature();
 
+Player.prototype.tryToMoveMeTo = function(newXPos, newYPos, curXPos, curYPos, squareToCheck, currentBackgroundString){
+  console.log(this.name + ' tryToMoveMeTo ' + newXPos + ', ' + newYPos);
+  console.log(squareToCheck + ' is there right now');
+  if(typeof(squareToCheck) === 'string'){ //if you're trying to run into the background
+    console.log('Ran into background, going to draw ' + this.name + 'where it is.');
+    return this.drawMe();
+  } 
+  // else if (squareToCheck instanceof Array){ //TODO: implement functionality to deal with players running into monsters, monsters running into players, monsters running into eachother
+  //   
+  // }
+};
+
 Player.prototype.jump = function(){
   console.log('jump');
-  
+  this.jumping = true;
   
 };
 Player.prototype.useObject = function(){
@@ -436,6 +460,7 @@ Power.prototype.moveMe = function(){
 
 
 function Barbarian(){
+  this.name = 'Barbarian';
   this.health = 3;
   game.player = this;
   game.sprites.push(this);
@@ -444,6 +469,7 @@ Barbarian.prototype = new Player();
 
 
 function Wizard(){
+  this.name = 'Wizard';
   this.hasPower = true;
   game.player = this;
   game.sprites.push(this);
@@ -452,6 +478,7 @@ Wizard.prototype = new Player();
 
 
 function Ranger(){
+  this.name = 'Ranger';
   this.jumpsAllowed = 3;
   game.player = this;
   game.sprites.push(this);
@@ -473,7 +500,8 @@ Wizard.prototype = new Player();
 //Enemy
 //________________________________________________________________________________________________________________________________________________________________
 function Enemy(){
-  this.color = 'red';
+  this.name     = 'Enemy';
+  this.color    = 'red';
   this.disabled = true;
   this.alive    = true;
   this.xPos     = null;
